@@ -8,8 +8,8 @@ html {
 }
 
 body {
-  background-color: #0d1117;
-  color: #e6edf3;
+  background-color: #fdfbf7;
+  color: #2d312e;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -21,31 +21,31 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0d1117;
+  background: #fdfbf7;
 }
 ::-webkit-scrollbar-thumb {
-  background: #30363d;
+  background: #e6e2d8;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #58a6ff;
+  background: #869d7a;
 }
 
 /* ─── Selection ─────────────────────────────────────────── */
 ::selection {
-  background: rgba(88, 166, 255, 0.25);
-  color: #e6edf3;
+  background: rgba(168, 158, 201, 0.25);
+  color: #2d312e;
 }
 
 /* ─── Dot Grid Background ───────────────────────────────── */
 .dot-grid {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(45, 49, 46, 0.05) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
 /* ─── Gradient Text ─────────────────────────────────────── */
 .gradient-text {
-  background: linear-gradient(135deg, #58a6ff 0%, #a371f7 50%, #f0883e 100%);
+  background: linear-gradient(135deg, #788e6e 0%, #978bb5 50%, #d4a373 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -54,18 +54,19 @@ body {
 }
 
 /* ─── Glow Effects ──────────────────────────────────────── */
-.glow-blue {
-  box-shadow: 0 0 40px rgba(88, 166, 255, 0.15), 0 0 80px rgba(88, 166, 255, 0.05);
+.glow-sage {
+  box-shadow: 0 0 40px rgba(134, 157, 122, 0.08), 0 0 80px rgba(134, 157, 122, 0.03);
 }
 
-.glow-purple {
-  box-shadow: 0 0 40px rgba(163, 113, 247, 0.15), 0 0 80px rgba(163, 113, 247, 0.05);
+.glow-lavender {
+  box-shadow: 0 0 40px rgba(168, 158, 201, 0.08), 0 0 80px rgba(168, 158, 201, 0.03);
 }
 
 /* ─── Card Hover Glow ───────────────────────────────────── */
 .feature-card {
   position: relative;
   transition: all 0.3s ease;
+  background-color: #f5f2eb;
 }
 
 .feature-card::before {
@@ -79,12 +80,12 @@ body {
 }
 
 .feature-card:hover::before {
-  background: linear-gradient(135deg, rgba(88, 166, 255, 0.4), rgba(163, 113, 247, 0.4));
+  background: linear-gradient(135deg, rgba(134, 157, 122, 0.3), rgba(168, 158, 201, 0.3));
 }
 
 .feature-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 40px rgba(134, 157, 122, 0.08);
 }
 
 /* ─── Shimmer Button ────────────────────────────────────── */
@@ -103,7 +104,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.15),
+    rgba(255, 255, 255, 0.3),
     transparent
   );
   transition: none;
@@ -116,9 +117,9 @@ body {
 /* ─── IDE Mockup ────────────────────────────────────────── */
 .ide-window {
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 40px 100px rgba(0, 0, 0, 0.6),
-    0 0 80px rgba(88, 166, 255, 0.08);
+    0 0 0 1px rgba(0, 0, 0, 0.03),
+    0 30px 70px rgba(45, 49, 46, 0.08),
+    0 0 50px rgba(134, 157, 122, 0.05);
 }
 
 /* ─── Keyframes ─────────────────────────────────────────── */
