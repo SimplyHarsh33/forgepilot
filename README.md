@@ -1,4 +1,4 @@
-# CodeForge AI
+# CodePilot 
 
 An AI-powered developer workspace inspired by tools like Cursor and Emergent.
 
