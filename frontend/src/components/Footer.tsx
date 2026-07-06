@@ -89,7 +89,7 @@ const Footer = () => (
       {/* Bottom bar */}
       <div className="pt-8 border-t border-[#E6E2D8]/60 flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-sm text-[#5B625E]">
-          © {new Date().getFullYear()} ForgePilot. Built with ❤️.
+          © {new Date().getFullYear()} ForgePilot. All rights reserved.
         </p>
         <div className="flex items-center gap-2 text-xs text-[#5B625E]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#869D7A] animate-pulse" />
