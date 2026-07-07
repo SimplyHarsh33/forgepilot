@@ -43,6 +43,7 @@ interface WorkspaceContextProps {
   deleteFile: (path: string) => void
   renameFile: (oldPath: string, newPath: string) => void
   updateFileContent: (path: string, content: string) => void
+  saveFile: (path: string) => void
   openFile: (path: string) => void
   closeFile: (path: string) => void
   setActiveTab: (path: string | null) => void
@@ -478,6 +479,20 @@ I'm ready to write some code!`,
         },
       }
     })
+  }
+
+  const saveFile = (path: string) => {
+    setFiles((prev) => {
+      if (!prev[path]) return prev
+      return {
+        ...prev,
+        [path]: {
+          ...prev[path],
+          isModified: false,
+        },
+      }
+    })
+    addCompilerLog(`[Sandbox] Saved file: ${path}`)
   }
 
   const openFile = (path: string) => {
@@ -1085,6 +1100,7 @@ Beside the action block, explain your choices in a helpful, concise developer vo
         deleteFile,
         renameFile,
         updateFileContent,
+        saveFile,
         openFile,
         closeFile,
         setActiveTab,

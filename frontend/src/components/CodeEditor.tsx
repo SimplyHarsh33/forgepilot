@@ -1,14 +1,28 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import Editor, { Monaco } from '@monaco-editor/react'
 import { useWorkspace } from '../context/WorkspaceContext'
-import { Zap, X } from 'lucide-react'
+import { Zap, X, Save } from 'lucide-react'
 
 export default function CodeEditor() {
   const { 
-    files, openTabs, activeTab, updateFileContent, openFile, closeFile, theme, projectType 
+    files, openTabs, activeTab, updateFileContent, openFile, closeFile, theme, projectType, saveFile 
   } = useWorkspace()
 
   const editorRef = useRef<any>(null)
+
+  // Ctrl+S key listener for saving active document
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        if (activeTab && files[activeTab]?.isModified) {
+          saveFile(activeTab)
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [activeTab, files, saveFile])
 
   const activeFile = activeTab ? files[activeTab] : null
 
@@ -75,46 +89,68 @@ export default function CodeEditor() {
       
       {/* Tabs Row Bar */}
       {openTabs.length > 0 && (
-        <div className="flex items-center h-9 border-b border-[#E6E2D8] dark:border-[#30363d] bg-[#F5F2EB] dark:bg-[#161b22] overflow-x-auto shrink-0 select-none scrollbar-none">
-          {openTabs.map((tabPath) => {
-            const file = files[tabPath]
-            if (!file) return null
-            const isActive = activeTab === tabPath
-            return (
-              <div
-                key={tabPath}
-                onClick={() => openFile(tabPath)}
-                className={`group flex items-center gap-2 h-full px-4 border-r border-[#E6E2D8] dark:border-[#30363d] text-xs font-medium cursor-pointer transition-colors relative shrink-0 ${
-                  isActive
-                    ? 'bg-[#FCFAF7] dark:bg-[#0d1117] text-[#2D312E] dark:text-[#e6edf3]'
-                    : 'text-[#5B625E] dark:text-[#8b949e] hover:bg-[#EBE7DD] dark:hover:bg-white/5'
-                }`}
-              >
-                {/* Active Indicator line */}
-                {isActive && (
-                  <div className={`absolute top-0 left-0 right-0 h-0.5 ${theme === 'zen' ? 'bg-[#869D7A]' : 'bg-[#58a6ff]'}`} />
-                )}
-                
-                <span className="truncate max-w-[120px]">{file.name}</span>
-                
-                {/* Modified Indicator or Close tab */}
-                <div className="w-3.5 h-3.5 flex items-center justify-center relative">
-                  {file.isModified && !isActive ? (
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#A89EC9] dark:bg-[#a371f7]" />
-                  ) : null}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      closeFile(tabPath)
-                    }}
-                    className="absolute inset-0 items-center justify-center hidden group-hover:flex rounded hover:bg-black/10 dark:hover:bg-white/10 text-[#5B625E] dark:text-[#8b949e] hover:text-[#2D312E] dark:hover:text-[#e6edf3]"
-                  >
-                    <X size={10} />
-                  </button>
+        <div className="flex items-center justify-between h-9 border-b border-[#E6E2D8] dark:border-[#30363d] bg-[#F5F2EB] dark:bg-[#161b22] shrink-0 select-none">
+          {/* Scrollable tabs */}
+          <div className="flex items-center h-full overflow-x-auto scrollbar-none flex-1">
+            {openTabs.map((tabPath) => {
+              const file = files[tabPath]
+              if (!file) return null
+              const isActive = activeTab === tabPath
+              return (
+                <div
+                  key={tabPath}
+                  onClick={() => openFile(tabPath)}
+                  className={`group flex items-center gap-2 h-full px-4 border-r border-[#E6E2D8] dark:border-[#30363d] text-xs font-medium cursor-pointer transition-colors relative shrink-0 ${
+                    isActive
+                      ? 'bg-[#FCFAF7] dark:bg-[#0d1117] text-[#2D312E] dark:text-[#e6edf3]'
+                      : 'text-[#5B625E] dark:text-[#8b949e] hover:bg-[#EBE7DD] dark:hover:bg-white/5'
+                  }`}
+                >
+                  {/* Active Indicator line */}
+                  {isActive && (
+                    <div className={`absolute top-0 left-0 right-0 h-0.5 ${theme === 'zen' ? 'bg-[#869D7A]' : 'bg-[#58a6ff]'}`} />
+                  )}
+                  
+                  <span className="truncate max-w-[120px]">{file.name}</span>
+                  
+                  {/* Modified Indicator or Close tab */}
+                  <div className="w-3.5 h-3.5 flex items-center justify-center relative">
+                    {file.isModified ? (
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#A89EC9] dark:bg-[#a371f7]" />
+                    ) : null}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        closeFile(tabPath)
+                      }}
+                      className="absolute inset-0 items-center justify-center hidden group-hover:flex rounded hover:bg-black/10 dark:hover:bg-white/10 text-[#5B625E] dark:text-[#8b949e] hover:text-[#2D312E] dark:hover:text-[#e6edf3]"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+
+          {/* Save Button */}
+          {activeFile && (
+            <div className="flex items-center px-3 border-l border-[#E6E2D8] dark:border-[#30363d] h-full shrink-0">
+              <button
+                onClick={() => saveFile(activeFile.path)}
+                disabled={!activeFile.isModified}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
+                  activeFile.isModified
+                    ? 'bg-[#869D7A] hover:bg-[#869D7A]/95 text-white shadow-sm'
+                    : 'bg-transparent text-[#8A8F8B] border border-[#E6E2D8] dark:border-[#30363d] cursor-not-allowed'
+                }`}
+                title="Save changes (Ctrl+S)"
+              >
+                <Save size={11} />
+                <span>Save</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 
