@@ -3,6 +3,8 @@ import cors from 'cors'
 import { config } from './config/env'
 import projectRoutes from './routes/projectRoutes'
 import fileRoutes from './routes/fileRoutes'
+import { listProjects, createProject } from './controllers/projectController'
+import { readProjectFilesQuery, saveFileContent } from './controllers/fileController'
 
 const app = express()
 
@@ -10,9 +12,15 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-// Mount API routes
+// Mount API routes (v1 prefix)
 app.use('/api/projects', projectRoutes)
 app.use('/api/projects', fileRoutes)
+
+// Mount Root-level routes (requested custom endpoints)
+app.get('/projects', listProjects)
+app.post('/projects', createProject)
+app.get('/files', readProjectFilesQuery)
+app.post('/save', saveFileContent)
 
 // Default root route
 app.get('/', (req, res) => {

@@ -173,3 +173,50 @@ export const renameFileOrFolder = async (req: Request, res: Response) => {
     res.status(500).json({ error: `Failed to rename: ${err.message}` })
   }
 }
+
+export const readProjectFilesQuery = async (req: Request, res: Response) => {
+  try {
+    const name = req.query.project as string
+    if (!name) {
+      return res.status(400).json({ error: 'Project name query parameter is required' })
+    }
+    const projPath = path.join(config.PROJECTS_DIR, name)
+
+    try {
+      await fs.access(projPath)
+    } catch {
+      return res.status(404).json({ error: `Project '${name}' not found` })
+    }
+
+    const filesDict: { [filePath: string]: WorkspaceFile } = {}
+    await scanDir(projPath, '', filesDict)
+
+    res.status(200).json(filesDict)
+  } catch (err: any) {
+    res.status(500).json({ error: `Failed to read project files: ${err.message}` })
+  }
+}
+
+export const saveFileContent = async (req: Request, res: Response) => {
+  try {
+    const { project, path: relPath, content } = req.body
+
+    if (!project || !relPath) {
+      return res.status(400).json({ error: 'Project name and file path are required in body' })
+    }
+
+    const projPath = path.join(config.PROJECTS_DIR, project)
+    const targetPath = path.join(projPath, relPath)
+
+    if (!targetPath.startsWith(projPath)) {
+      return res.status(403).json({ error: 'Access denied: invalid path' })
+    }
+
+    await ensureDir(path.dirname(targetPath))
+    await fs.writeFile(targetPath, content || '')
+
+    res.status(200).json({ message: 'File saved successfully' })
+  } catch (err: any) {
+    res.status(500).json({ error: `Failed to save file: ${err.message}` })
+  }
+}
