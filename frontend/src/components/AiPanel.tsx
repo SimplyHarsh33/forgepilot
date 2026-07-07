@@ -1,10 +1,62 @@
 import { useState, useRef, useEffect } from 'react'
 import { useWorkspace } from '../context/WorkspaceContext'
-import { Sparkles, Send, User, FileCheck } from 'lucide-react'
+import { Sparkles, Send, User, FileCheck, Copy, Check } from 'lucide-react'
+
+// Custom Markdown parser for code fences
+interface MarkdownBlock {
+  type: 'text' | 'code'
+  language: string
+  content: string
+}
+
+const parseMarkdown = (text: string): MarkdownBlock[] => {
+  if (!text) return []
+
+  const parts: MarkdownBlock[] = []
+  const codeRegex = /```(\w*)\n([\s\S]*?)```/g
+  let lastIndex = 0
+  let match
+
+  while ((match = codeRegex.exec(text)) !== null) {
+    const index = match.index
+    const language = match[1] || 'plaintext'
+    const code = match[2]
+
+    // Add preceding text block
+    if (index > lastIndex) {
+      parts.push({
+        type: 'text',
+        language: '',
+        content: text.substring(lastIndex, index)
+      })
+    }
+
+    // Add code block
+    parts.push({
+      type: 'code',
+      language,
+      content: code
+    })
+
+    lastIndex = codeRegex.lastIndex
+  }
+
+  // Add trailing text block
+  if (lastIndex < text.length) {
+    parts.push({
+      type: 'text',
+      language: '',
+      content: text.substring(lastIndex)
+    })
+  }
+
+  return parts
+}
 
 export default function AiPanel() {
   const { chatHistory, sendMessage, isGenerating } = useWorkspace()
   const [input, setInput] = useState('')
+  const [copiedBlockId, setCopiedBlockId] = useState<string | null>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   const handleSend = (e: React.FormEvent) => {
@@ -14,12 +66,18 @@ export default function AiPanel() {
     setInput('')
   }
 
+  const handleCopyCode = (code: string, blockId: string) => {
+    navigator.clipboard.writeText(code)
+    setCopiedBlockId(blockId)
+    setTimeout(() => setCopiedBlockId(null), 2000)
+  }
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatHistory])
 
-  // Custom inline Markdown parser
-  const renderMessageText = (text: string) => {
+  // Custom inline Markdown parser for text blocks
+  const renderTextWithInlineMarkdown = (text: string) => {
     if (!text) return null
     
     // Parse alert blocks
@@ -58,12 +116,59 @@ export default function AiPanel() {
 
   // Detect and render code blocks / action updates separately if needed
   const renderMessageContent = (message: any) => {
-    // Check if message has structural JSON actions (implied or parsed)
     const hasWorkspaceActions = message.text.includes('```json-workspace-action')
+    const blocks = parseMarkdown(message.text)
 
     return (
       <div className="space-y-3">
-        {renderMessageText(message.text)}
+        {blocks.map((block, idx) => {
+          if (block.type === 'code') {
+            // Hide workspace action payload from the user chat message directly
+            if (block.language === 'json-workspace-action') {
+              return null
+            }
+
+            const blockId = `${message.id}-${idx}`
+            const isCopied = copiedBlockId === blockId
+
+            return (
+              <div key={blockId} className="my-3 overflow-hidden rounded-xl border border-[#E6E2D8] dark:border-[#30363d]">
+                {/* Header bar */}
+                <div className="flex items-center justify-between px-4 py-1.5 bg-[#EBE7DD] dark:bg-[#161b22] text-[#5B625E] dark:text-[#8b949e] border-b border-[#E6E2D8] dark:border-[#30363d] text-[10px] font-mono select-none font-bold">
+                  <span className="uppercase">{block.language}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCode(block.content, blockId)}
+                    className="flex items-center gap-1 hover:text-[#2D312E] dark:hover:text-[#e6edf3] transition-colors"
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check size={11} className="text-[#869D7A]" />
+                        <span className="text-[#869D7A]">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={11} />
+                        <span>Copy code</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                {/* Code pre */}
+                <pre className="p-3.5 overflow-x-auto bg-[#FCFAF7] dark:bg-[#0d1117] text-[#2D312E] dark:text-[#e6edf3] font-mono text-[10px] leading-relaxed select-text scrollbar-thin">
+                  <code>{block.content}</code>
+                </pre>
+              </div>
+            )
+          }
+
+          // Render text block with inline markdown
+          return (
+            <div key={idx}>
+              {renderTextWithInlineMarkdown(block.content.trim())}
+            </div>
+          )
+        })}
 
         {hasWorkspaceActions && (
           <div className="p-3 bg-[#FAF8F5] dark:bg-[#0d1117] border border-[#869D7A]/30 rounded-2xl flex items-start gap-2.5 shadow-sm text-left animate-pulse mt-2">
