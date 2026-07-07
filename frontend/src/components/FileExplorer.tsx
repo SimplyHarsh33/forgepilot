@@ -1,13 +1,13 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { 
   Folder, FolderOpen, FileCode, Plus, Trash2, Edit, ChevronDown, ChevronRight, FileJson, 
-  FileCheck, Globe, HelpCircle 
+  FileCheck, Globe 
 } from 'lucide-react'
 
 export default function FileExplorer() {
   const { 
-    files, activeTab, openFile, createFile, deleteFile, renameFile, projectType 
+    files, activeTab, openFile, createFile, deleteFile, renameFile 
   } = useWorkspace()
 
   const [expanded, setExpanded] = useState<{ [path: string]: boolean }>({

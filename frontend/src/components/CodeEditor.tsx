@@ -63,7 +63,7 @@ export default function CodeEditor() {
     })
   }
 
-  const handleEditorMount = (editor: any, monaco: Monaco) => {
+  const handleEditorMount = (editor: any) => {
     editorRef.current = editor
   }
 

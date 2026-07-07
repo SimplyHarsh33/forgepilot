@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useWorkspace } from '../context/WorkspaceContext'
 import FileExplorer from './FileExplorer'
 import CodeEditor from './CodeEditor'
@@ -7,7 +7,7 @@ import LivePreview from './LivePreview'
 import SettingsModal from './SettingsModal'
 import { 
   Zap, Settings, HelpCircle, LogOut, Moon, Sun, 
-  MessageSquare, FolderOpen, PanelRight, Layers, Columns 
+  FolderOpen, Columns 
 } from 'lucide-react'
 
 export default function Workspace() {

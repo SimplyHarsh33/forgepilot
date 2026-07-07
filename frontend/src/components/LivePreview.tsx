@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useWorkspace } from '../context/WorkspaceContext'
-import { RefreshCw, Play, AlertCircle, Terminal, Eye } from 'lucide-react'
+import { RefreshCw, Terminal, Eye } from 'lucide-react'
 
 export default function LivePreview() {
   const { files, projectType, compilerLogs, addCompilerLog } = useWorkspace()
