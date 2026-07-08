@@ -5,6 +5,7 @@ import projectRoutes from './routes/projectRoutes'
 import fileRoutes from './routes/fileRoutes'
 import { listProjects, createProject } from './controllers/projectController'
 import { readProjectFilesQuery, saveFileContent } from './controllers/fileController'
+import { chatHandler } from './controllers/chatController'
 
 const app = express()
 
@@ -21,6 +22,7 @@ app.get('/projects', listProjects)
 app.post('/projects', createProject)
 app.get('/files', readProjectFilesQuery)
 app.post('/save', saveFileContent)
+app.post('/chat', chatHandler)
 
 // Default root route
 app.get('/', (req, res) => {

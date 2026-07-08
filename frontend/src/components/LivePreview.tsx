@@ -50,10 +50,13 @@ export default function LivePreview() {
           const ext = path.split('.').pop();
           if (ext === 'tsx' || ext === 'ts' || ext === 'jsx' || ext === 'js') {
             const result = Babel.transform(file.content, {
-              presets: ['react', 'typescript'],
+              presets: ['env', 'react', 'typescript'],
               filename: path
             });
             window.__modules[path] = new Function('exports', 'require', 'module', result.code);
+          } else if (ext === 'css') {
+            const code = "const style = document.createElement('style'); style.textContent = " + JSON.stringify(file.content) + "; document.head.appendChild(style);";
+            window.__modules[path] = new Function('exports', 'require', 'module', code);
           }
         }
 
