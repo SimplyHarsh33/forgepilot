@@ -37,13 +37,14 @@ interface WorkspaceContextProps {
   activeSidebarTab: 'explorer' | 'chat' | 'settings'
   compilerLogs: string[]
   
-  createProject: (name: string, type: 'react' | 'html') => void
+  loadProject: (name: string, type: 'react' | 'html') => Promise<void>
+  createProject: (name: string, type: 'react' | 'html') => Promise<void>
   closeProject: () => void
   createFile: (path: string, content: string, isFolder: boolean) => void
   deleteFile: (path: string) => void
   renameFile: (oldPath: string, newPath: string) => void
   updateFileContent: (path: string, content: string) => void
-  saveFile: (path: string) => void
+  saveFile: (path: string) => Promise<void>
   openFile: (path: string) => void
   closeFile: (path: string) => void
   setActiveTab: (path: string | null) => void
@@ -55,235 +56,11 @@ interface WorkspaceContextProps {
   clearCompilerLogs: () => void
 }
 
+const BACKEND_URL = 'http://localhost:5000'
+
 const WorkspaceContext = createContext<WorkspaceContextProps | undefined>(undefined)
 
-const REACT_TEMPLATE: { [path: string]: WorkspaceFile } = {
-  'package.json': {
-    path: 'package.json',
-    name: 'package.json',
-    content: `{
-  "name": "forgepilot-react-app",
-  "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "lucide-react": "^0.395.0"
-  }
-}`,
-    isFolder: false,
-  },
-  'index.html': {
-    path: 'index.html',
-    name: 'index.html',
-    content: `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ForgePilot Virtual App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>`,
-    isFolder: false,
-  },
-  'src': { path: 'src', name: 'src', content: '', isFolder: true },
-  'src/main.tsx': {
-    path: 'src/main.tsx',
-    name: 'main.tsx',
-    content: `import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App'
-import './index.css'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-)`,
-    isFolder: false,
-  },
-  'src/index.css': {
-    path: 'src/index.css',
-    name: 'index.css',
-    content: `@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  background-color: #fdfbf7;
-  color: #2d312e;
-}`,
-    isFolder: false,
-  },
-  'src/App.tsx': {
-    path: 'src/App.tsx',
-    name: 'App.tsx',
-    content: `import React from 'react'
-import Navbar from './components/Navbar'
-import Counter from './components/Counter'
-
-function App() {
-  return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#2D312E]">
-      <Navbar />
-      <main className="max-w-4xl mx-auto px-6 py-20 text-center">
-        <h1 className="text-5xl font-black tracking-tight mb-4">
-          Welcome to your <span className="text-[#869D7A]">ForgePilot</span> Project
-        </h1>
-        <p className="text-[#5B625E] text-lg max-w-xl mx-auto mb-10">
-          This React component is compiled client-side in real-time. Edit files in the Monaco Editor or ask the AI assistant to make modifications.
-        </p>
-        <Counter />
-      </main>
-    </div>
-  )
-}
-
-export default App`,
-    isFolder: false,
-  },
-  'src/components': { path: 'src/components', name: 'components', content: '', isFolder: true },
-  'src/components/Navbar.tsx': {
-    path: 'src/components/Navbar.tsx',
-    name: 'Navbar.tsx',
-    content: `import React from 'react'
-import { Zap } from 'lucide-react'
-
-export default function Navbar() {
-  return (
-    <nav className="h-16 border-b border-[#E6E2D8] bg-[#FAF8F5] flex items-center justify-between px-8">
-      <div className="flex items-center gap-2 font-bold text-[#2D312E]">
-        <div className="w-6 h-6 rounded bg-[#869D7A] flex items-center justify-center text-white">
-          <Zap size={12} fill="white" />
-        </div>
-        <span>ForgePilot App</span>
-      </div>
-      <div className="flex gap-6 text-sm text-[#5B625E] font-medium">
-        <a href="#" className="hover:text-[#2D312E]">Home</a>
-        <a href="#" className="hover:text-[#2D312E]">Features</a>
-        <a href="#" className="hover:text-[#2D312E]">Settings</a>
-      </div>
-    </nav>
-  )
-}`,
-    isFolder: false,
-  },
-  'src/components/Counter.tsx': {
-    path: 'src/components/Counter.tsx',
-    name: 'Counter.tsx',
-    content: `import React, { useState } from 'react'
-
-export default function Counter() {
-  const [count, setCount] = useState(0)
-  return (
-    <div className="inline-flex flex-col items-center p-6 bg-[#F5F2EB] border border-[#E6E2D8] rounded-2xl shadow-sm">
-      <span className="text-3xl font-extrabold text-[#2D312E] mb-2">{count}</span>
-      <p className="text-xs text-[#5B625E] mb-4">React state is fully reactive inside the Sandbox</p>
-      <button 
-        onClick={() => setCount(c => c + 1)}
-        className="px-6 py-2.5 bg-[#869D7A] hover:bg-[#869D7A]/95 text-white font-semibold rounded-lg text-sm transition-all shadow-sm"
-      >
-        Increment Counter
-      </button>
-    </div>
-  )
-}`,
-    isFolder: false,
-  },
-}
-
-const HTML_TEMPLATE: { [path: string]: WorkspaceFile } = {
-  'index.html': {
-    path: 'index.html',
-    name: 'index.html',
-    content: `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ForgePilot HTML Sandbox</title>
-  <!-- Load Tailwind CSS inside Sandbox -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body class="bg-[#FDFBF7] text-[#2D312E] min-h-screen flex flex-col justify-between">
-
-  <nav class="h-16 border-b border-[#E6E2D8] bg-[#FAF8F5] flex items-center justify-between px-8">
-    <div class="flex items-center gap-2 font-bold text-[#2D312E]">
-      <span class="w-6 h-6 rounded bg-[#A89EC9] flex items-center justify-center text-white text-xs">⚡</span>
-      <span>HTML project</span>
-    </div>
-    <div class="flex gap-6 text-sm text-[#5B625E] font-medium">
-      <a href="#" class="hover:text-[#2D312E] transition-colors">Home</a>
-      <a href="#" class="hover:text-[#2D312E] transition-colors">API</a>
-    </div>
-  </nav>
-
-  <main class="max-w-4xl mx-auto px-6 py-20 text-center flex-1">
-    <h1 class="text-5xl font-black tracking-tight mb-4">
-      Pure HTML/CSS/JS Playground
-    </h1>
-    <p class="text-[#5B625E] text-lg max-w-xl mx-auto mb-10">
-      Build statically using simple HTML tags, scripts, and CSS. Tailwind CSS classes compile dynamically inside the frame.
-    </p>
-
-    <div class="inline-flex flex-col items-center p-6 bg-[#F5F2EB] border border-[#E6E2D8] rounded-2xl shadow-sm">
-      <button 
-        id="counter-btn"
-        class="px-6 py-2.5 bg-[#A89EC9] hover:bg-[#A89EC9]/90 text-white font-semibold rounded-lg text-sm transition-all"
-      >
-        Click count: <span id="counter-val">0</span>
-      </button>
-    </div>
-  </main>
-
-  <footer class="py-6 text-center text-xs text-[#5B625E] border-t border-[#E6E2D8] bg-[#FAF8F5]">
-    ForgePilot HTML Sandbox
-  </footer>
-
-  <script src="script.js"></script>
-</body>
-</html>`,
-    isFolder: false,
-  },
-  'styles.css': {
-    path: 'styles.css',
-    name: 'styles.css',
-    content: `/* Custom HTML styles */
-h1 {
-  animation: pulse-title 3s infinite ease-in-out;
-}
-
-@keyframes pulse-title {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}`,
-    isFolder: false,
-  },
-  'script.js': {
-    path: 'script.js',
-    name: 'script.js',
-    content: `// Dynamic script execution
-let count = 0;
-const btn = document.getElementById('counter-btn');
-const val = document.getElementById('counter-val');
-
-if (btn && val) {
-  btn.addEventListener('click', () => {
-    count++;
-    val.textContent = count;
-  });
-}`,
-    isFolder: false,
-  },
-}
 
 export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [projectName, setProjectName] = useState<string>('')
@@ -318,37 +95,55 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [theme])
 
-  const createProject = (name: string, type: 'react' | 'html') => {
-    setProjectName(name)
-    setProjectType(type)
-    const initialFiles = type === 'react' ? { ...REACT_TEMPLATE } : { ...HTML_TEMPLATE }
-    setFiles(initialFiles)
-    
-    // Open default files
-    if (type === 'react') {
-      setOpenTabs(['src/App.tsx', 'src/components/Counter.tsx'])
-      setActiveTab('src/App.tsx')
-    } else {
-      setOpenTabs(['index.html', 'script.js'])
-      setActiveTab('index.html')
+  const loadProject = async (name: string, type: 'react' | 'html') => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/files?project=${name}`)
+      if (!response.ok) throw new Error('Failed to load project files')
+      const data = await response.json()
+      
+      setProjectName(name)
+      setProjectType(type)
+      setFiles(data)
+      
+      if (type === 'react') {
+        const defaultTabs = ['src/App.tsx', 'src/components/Counter.tsx'].filter(t => data[t])
+        setOpenTabs(defaultTabs)
+        setActiveTab(defaultTabs.length > 0 ? defaultTabs[0] : null)
+      } else {
+        const defaultTabs = ['index.html', 'script.js'].filter(t => data[t])
+        setOpenTabs(defaultTabs)
+        setActiveTab(defaultTabs.length > 0 ? defaultTabs[0] : null)
+      }
+      
+      setChatHistory([
+        {
+          id: 'welcome',
+          sender: 'assistant',
+          text: `Welcome to **` + name + `**! I'm your ForgePilot assistant. I can write and edit code in your project.`,
+          timestamp: new Date(),
+        },
+      ])
+      setCompilerLogs([`[ForgePilot] Project "` + name + `" loaded successfully.`, `[Sandbox] Virtual web-server listening on port 3000...`])
+    } catch (err: any) {
+      console.error(err)
+      alert(err.message)
     }
+  }
 
-    setChatHistory([
-      {
-        id: 'welcome',
-        sender: 'assistant',
-        text: `Welcome to **` + name + `**! I'm your ForgePilot assistant. I can write and edit code in your project.
-
-Try asking me:
-*   *"Create a Header component"*
-*   *"Create a responsive Card Grid with image placeholders"*
-*   *"Add a dark mode styling option to our layout"*
-
-I'm ready to write some code!`,
-        timestamp: new Date(),
-      },
-    ])
-    setCompilerLogs([`[ForgePilot] Project "` + name + `" initialized successfully.`, `[Sandbox] Virtual web-server listening on port 3000...`])
+  const createProject = async (name: string, type: 'react' | 'html') => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, type }),
+      })
+      if (!response.ok) throw new Error('Failed to create project')
+      
+      await loadProject(name, type)
+    } catch (err: any) {
+      console.error(err)
+      alert(err.message)
+    }
   }
 
   const closeProject = () => {
@@ -481,18 +276,33 @@ I'm ready to write some code!`,
     })
   }
 
-  const saveFile = (path: string) => {
-    setFiles((prev) => {
-      if (!prev[path]) return prev
-      return {
-        ...prev,
-        [path]: {
-          ...prev[path],
-          isModified: false,
-        },
-      }
-    })
-    addCompilerLog(`[Sandbox] Saved file: ${path}`)
+  const saveFile = async (path: string) => {
+    const file = files[path]
+    if (!file) return
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project: projectName, path, content: file.content }),
+      })
+      if (!response.ok) throw new Error('Failed to save file')
+      
+      setFiles((prev) => {
+        if (!prev[path]) return prev
+        return {
+          ...prev,
+          [path]: {
+            ...prev[path],
+            isModified: false,
+          },
+        }
+      })
+      addCompilerLog(`[Sandbox] Saved file: ${path}`)
+    } catch (err: any) {
+      console.error(err)
+      addCompilerLog(`[Error] Failed to save file: ${path}`)
+    }
   }
 
   const openFile = (path: string) => {
@@ -1094,6 +904,7 @@ Beside the action block, explain your choices in a helpful, concise developer vo
         theme,
         activeSidebarTab,
         compilerLogs,
+        loadProject,
         createProject,
         closeProject,
         createFile,

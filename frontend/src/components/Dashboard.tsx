@@ -1,51 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { 
   Terminal, ArrowRight, Zap, Code, 
   Clock, Plus, Search, ArrowLeft, Folder 
 } from 'lucide-react'
 
-interface MockProject {
-  id: string
-  name: string
-  type: 'react' | 'html'
-  description: string
-  lastModified: string
-}
 
-const MOCK_PROJECTS: MockProject[] = [
-  {
-    id: '1',
-    name: 'personal-portfolio',
-    type: 'html',
-    description: 'My custom developer portfolio site with tailwind styling and animations.',
-    lastModified: '2 hours ago',
-  },
-  {
-    id: '2',
-    name: 'crypto-tracker',
-    type: 'react',
-    description: 'React dashboard with live updates, charts, and transaction history.',
-    lastModified: '1 day ago',
-  },
-  {
-    id: '3',
-    name: 'ecommerce-checkout',
-    type: 'react',
-    description: 'Interactive shopping cart checkout flow with local state handling.',
-    lastModified: '3 days ago',
-  },
-  {
-    id: '4',
-    name: 'landing-page-sandbox',
-    type: 'html',
-    description: 'Clean marketing website landing page for a SaaS startup product.',
-    lastModified: '1 week ago',
-  },
-]
 
 export default function Dashboard() {
-  const { createProject } = useWorkspace()
+  const { createProject, loadProject } = useWorkspace()
+  const [projects, setProjects] = useState<any[]>([])
   const [view, setView] = useState<'list' | 'create'>('list')
   const [name, setName] = useState('')
   const [template, setTemplate] = useState<'react' | 'html'>('react')
@@ -64,10 +28,33 @@ export default function Dashboard() {
   }
 
   const handleLaunchProject = (projectName: string, projectType: 'react' | 'html') => {
-    createProject(projectName, projectType)
+    loadProject(projectName, projectType)
   }
 
-  const filteredProjects = MOCK_PROJECTS.filter(project => {
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/projects')
+        if (response.ok) {
+          const data = await response.json()
+          // Map backend projects to format needed by dashboard
+          const mapped = data.map((p: any) => ({
+            id: p.name,
+            name: p.name,
+            type: p.type,
+            description: p.description || `Workspace directory: ${p.name}`,
+            lastModified: p.lastModified || 'Recently',
+          }))
+          setProjects(mapped)
+        }
+      } catch (err) {
+        console.error('Failed to fetch projects', err)
+      }
+    }
+    fetchProjects()
+  }, [])
+
+  const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           project.description.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesType = filterType === 'all' || project.type === filterType
