@@ -747,86 +747,34 @@ export default App`
           )
         )
       } else {
-        // Real Gemini API call
-        const apiKey = llmConfig.apiKey
-        if (!apiKey) {
-          throw new Error('Please supply a Gemini API Key in the settings panel to run in Online Mode.')
-        }
+        // Route API call through backend proxy
+        // API key is optional here — the backend reads GEMINI_API_KEY from its .env
+        // The user can also override with a custom key via the Settings panel
+        const messagesPayload = [
+          { role: 'user', content: text }
+        ]
 
-        // Construct file index context for system instructions
-        const fileContext = Object.keys(files)
-          .map((filePath) => {
-            const file = files[filePath]
-            if (file.isFolder) return null
-            return `--- FILE: ${filePath} ---\n${file.content}`
-          })
-          .filter(Boolean)
-          .join('\n\n')
-
-        const systemInstruction = `You are ForgePilot, an AI coding workspace assistant.
-You help developers generate, edit, and manage files in their workspace.
-The user is building a ${projectType === 'react' ? 'React app with TypeScript and Tailwind CSS' : 'Static HTML/CSS/JS page'}.
-Here are the files currently present in the workspace:
-${fileContext}
-
-Always respond to requests by creating or editing files as needed.
-To perform file changes, write a JSON action block inside a \`\`\`json-workspace-action code block like this:
-{
-  "actions": [
-    {
-      "action": "create",
-      "path": "src/components/MyNewComp.tsx",
-      "content": "Full code file contents"
-    },
-    {
-      "action": "modify",
-      "path": "src/App.tsx",
-      "content": "Entire updated code file contents"
-    },
-    {
-      "action": "delete",
-      "path": "src/components/Unused.tsx",
-      "content": ""
-    }
-  ]
-}
-You can run multiple actions (creates, modifications, deletes) at once.
-You MUST output full file contents in the content field. Do not truncate code.
-Style code using beautiful tailwind colors matching our pastel theme (or soft custom light styling).
-Beside the action block, explain your choices in a helpful, concise developer voice.`
-
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${llmConfig.model}:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: 'user',
-                  parts: [{ text }],
-                },
-              ],
-              systemInstruction: {
-                parts: [{ text: systemInstruction }],
-              },
-              generationConfig: {
-                temperature: 0.2,
-              },
-            }),
-          }
-        )
+        const response = await fetch(`${BACKEND_URL}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: messagesPayload,
+            workspaceFiles: files,
+            apiKey: llmConfig.apiKey || undefined,
+            model: llmConfig.model,
+          }),
+        })
 
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}))
-          throw new Error(errData.error?.message || `API call failed with status: ${response.status}`)
+          throw new Error(errData.error || `API call failed with status: ${response.status}`)
         }
 
         const data = await response.json()
-        const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        const textResponse = data.reply || ''
 
         if (!textResponse) {
-          throw new Error('No content returned from Gemini API.')
+          throw new Error('No content returned from API.')
         }
 
         // Parse workspace actions
