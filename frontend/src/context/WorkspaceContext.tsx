@@ -78,7 +78,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const saved = localStorage.getItem('forgepilot_llm_config')
     return saved
       ? JSON.parse(saved)
-      : { provider: 'simulated', apiKey: '', model: 'gemini-1.5-flash' }
+      : { provider: 'gemini', apiKey: '', model: 'gemini-2.0-flash' }
   })
 
   useEffect(() => {
