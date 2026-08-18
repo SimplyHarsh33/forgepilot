@@ -70,7 +70,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [activeTab, setActiveTab] = useState<string | null>(null)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
-  const [theme, setTheme] = useState<'zen' | 'midnight'>('zen')
+  const [theme, setTheme] = useState<'zen' | 'midnight'>(() => {
+    const saved = localStorage.getItem('forgepilot_theme')
+    return (saved as 'zen' | 'midnight') || 'zen'
+  })
   const [activeSidebarTab, setActiveSidebarTab] = useState<'explorer' | 'chat' | 'settings'>('explorer')
   const [compilerLogs, setCompilerLogs] = useState<string[]>([])
 
@@ -84,6 +87,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     localStorage.setItem('forgepilot_llm_config', JSON.stringify(llmConfig))
   }, [llmConfig])
+
+  useEffect(() => {
+    localStorage.setItem('forgepilot_theme', theme)
+  }, [theme])
 
   // Synchronize CSS variable theme
   useEffect(() => {

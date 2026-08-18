@@ -289,3 +289,32 @@ export const createProject = async (req: Request, res: Response) => {
     res.status(500).json({ error: `Failed to create project: ${err.message}` })
   }
 }
+export const deleteProject = async (req: Request, res: Response) => {
+  try {
+    const { name } = req.params
+    if (!name) {
+      return res.status(400).json({ error: 'Project name is required' })
+    }
+
+    const projPath = path.join(config.PROJECTS_DIR, name)
+
+    // Prevent path traversal
+    if (!projPath.startsWith(path.resolve(config.PROJECTS_DIR))) {
+      return res.status(403).json({ error: 'Access denied: invalid project name' })
+    }
+
+    // Verify it exists
+    try {
+      await fs.access(projPath)
+    } catch {
+      return res.status(404).json({ error: `Project '${name}' not found` })
+    }
+
+    // Delete folder and all contents recursively
+    await fs.rm(projPath, { recursive: true, force: true })
+
+    res.status(200).json({ message: `Project '${name}' deleted successfully` })
+  } catch (err: any) {
+    res.status(500).json({ error: `Failed to delete project: ${err.message}` })
+  }
+}

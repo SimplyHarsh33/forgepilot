@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { 
   Terminal, ArrowRight, Zap, Code, 
-  Clock, Plus, Search, ArrowLeft, Folder 
+  Clock, Plus, Search, ArrowLeft, Folder, Trash2 
 } from 'lucide-react'
 
 
@@ -29,6 +29,20 @@ export default function Dashboard() {
 
   const handleLaunchProject = (projectName: string, projectType: 'react' | 'html') => {
     loadProject(projectName, projectType)
+  }
+
+  const handleDeleteProject = async (e: React.MouseEvent, projectName: string) => {
+    e.stopPropagation() // prevent opening the project
+    if (!window.confirm(`Delete "${projectName}"? This cannot be undone.`)) return
+    try {
+      const res = await fetch(`http://localhost:5000/api/projects/${projectName}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('Failed to delete project')
+      setProjects((prev) => prev.filter((p) => p.name !== projectName))
+    } catch (err: any) {
+      alert(err.message)
+    }
   }
 
   useEffect(() => {
@@ -161,7 +175,7 @@ export default function Dashboard() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       {/* Project type icon & name */}
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                         <div className={`p-2 rounded-lg ${
                           project.type === 'react' ? 'bg-[#869D7A]/10 text-[#788E6E]' : 'bg-[#A89EC9]/10 text-[#7A61A0]'
                         }`}>
@@ -170,14 +184,24 @@ export default function Dashboard() {
                         <span className="font-bold text-sm text-[#2D312E]">{project.name}</span>
                       </div>
 
-                      {/* Tech Badge */}
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                        project.type === 'react' 
-                          ? 'bg-[#869D7A]/15 text-[#788E6E]' 
-                          : 'bg-[#A89EC9]/15 text-[#7A61A0]'
-                      }`}>
-                        {project.type === 'react' ? 'React App' : 'HTML Sandbox'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {/* Tech Badge */}
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                          project.type === 'react' 
+                            ? 'bg-[#869D7A]/15 text-[#788E6E]' 
+                            : 'bg-[#A89EC9]/15 text-[#7A61A0]'
+                        }`}>
+                          {project.type === 'react' ? 'React App' : 'HTML Sandbox'}
+                        </span>
+                        {/* Delete Button */}
+                        <button
+                          onClick={(e) => handleDeleteProject(e, project.name)}
+                          title="Delete project"
+                          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[#8A8F8B] hover:text-red-500 hover:bg-red-50 transition-all"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
 
                     <p className="text-xs text-[#5B625E] leading-relaxed line-clamp-2">
