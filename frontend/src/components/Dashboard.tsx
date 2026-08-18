@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useWorkspace } from '../context/WorkspaceContext'
+import { useWorkspace, BACKEND_URL } from '../context/WorkspaceContext'
 import { 
   Terminal, ArrowRight, Zap, Code, 
   Clock, Plus, Search, ArrowLeft, Folder, Trash2 
@@ -35,7 +35,7 @@ export default function Dashboard() {
     e.stopPropagation() // prevent opening the project
     if (!window.confirm(`Delete "${projectName}"? This cannot be undone.`)) return
     try {
-      const res = await fetch(`http://localhost:5000/api/projects/${projectName}`, {
+      const res = await fetch(`${BACKEND_URL}/api/projects/${projectName}`, {
         method: 'DELETE',
       })
       if (!res.ok) throw new Error('Failed to delete project')
@@ -48,7 +48,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch('http://localhost:5000/projects')
+        const response = await fetch(`${BACKEND_URL}/projects`)
         if (response.ok) {
           const data = await response.json()
           // Map backend projects to format needed by dashboard

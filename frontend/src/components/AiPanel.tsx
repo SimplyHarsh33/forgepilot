@@ -59,8 +59,6 @@ function ApiKeySetupPanel() {
   const [keyInput, setKeyInput] = useState(llmConfig.apiKey || '')
   const [showKey, setShowKey] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [mode, setMode] = useState<'gemini' | 'simulated'>(llmConfig.provider)
-
   const handleSave = () => {
     setLlmConfig({
       ...llmConfig,
@@ -72,7 +70,6 @@ function ApiKeySetupPanel() {
   }
 
   const handleSimulated = () => {
-    setMode('simulated')
     setLlmConfig({ ...llmConfig, provider: 'simulated' })
   }
 
