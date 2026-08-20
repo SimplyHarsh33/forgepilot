@@ -45,10 +45,18 @@ async function scanDir(projPath: string, currentDir: string, result: { [filePath
   }
 }
 
+// Helper to prevent path traversal cross-platform (handles Windows drive casing)
+function isSafePath(baseDir: string, targetPath: string): boolean {
+  const baseResolved = path.resolve(baseDir)
+  const targetResolved = path.resolve(baseResolved, targetPath)
+  const rel = path.relative(baseResolved, targetResolved)
+  return !rel.startsWith('..') && !path.isAbsolute(rel)
+}
+
 export const readProjectFiles = async (req: Request, res: Response) => {
   try {
     const { name } = req.params
-    const projPath = path.join(config.PROJECTS_DIR, name)
+    const projPath = path.resolve(config.PROJECTS_DIR, name)
 
     // Verify project folder exists
     try {
@@ -75,11 +83,11 @@ export const createFileOrFolder = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'File path is required' })
     }
 
-    const projPath = path.join(config.PROJECTS_DIR, name)
-    const targetPath = path.join(projPath, relPath)
+    const projPath = path.resolve(config.PROJECTS_DIR, name)
+    const targetPath = path.resolve(projPath, relPath)
 
     // Prevent directory traversal attacks
-    if (!targetPath.startsWith(projPath)) {
+    if (!isSafePath(projPath, targetPath)) {
       return res.status(403).json({ error: 'Access denied: invalid path' })
     }
 
@@ -105,10 +113,10 @@ export const updateFileContent = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'File path is required' })
     }
 
-    const projPath = path.join(config.PROJECTS_DIR, name)
-    const targetPath = path.join(projPath, relPath)
+    const projPath = path.resolve(config.PROJECTS_DIR, name)
+    const targetPath = path.resolve(projPath, relPath)
 
-    if (!targetPath.startsWith(projPath)) {
+    if (!isSafePath(projPath, targetPath)) {
       return res.status(403).json({ error: 'Access denied: invalid path' })
     }
 
@@ -134,10 +142,10 @@ export const deleteFileOrFolder = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'File path is required' })
     }
 
-    const projPath = path.join(config.PROJECTS_DIR, name)
-    const targetPath = path.join(projPath, relPath)
+    const projPath = path.resolve(config.PROJECTS_DIR, name)
+    const targetPath = path.resolve(projPath, relPath)
 
-    if (!targetPath.startsWith(projPath)) {
+    if (!isSafePath(projPath, targetPath)) {
       return res.status(403).json({ error: 'Access denied: invalid path' })
     }
 
@@ -157,11 +165,11 @@ export const renameFileOrFolder = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Old path and new path are required' })
     }
 
-    const projPath = path.join(config.PROJECTS_DIR, name)
-    const oldFullPath = path.join(projPath, oldRelPath)
-    const newFullPath = path.join(projPath, newRelPath)
+    const projPath = path.resolve(config.PROJECTS_DIR, name)
+    const oldFullPath = path.resolve(projPath, oldRelPath)
+    const newFullPath = path.resolve(projPath, newRelPath)
 
-    if (!oldFullPath.startsWith(projPath) || !newFullPath.startsWith(projPath)) {
+    if (!isSafePath(projPath, oldFullPath) || !isSafePath(projPath, newFullPath)) {
       return res.status(403).json({ error: 'Access denied: invalid path' })
     }
 
@@ -180,7 +188,7 @@ export const readProjectFilesQuery = async (req: Request, res: Response) => {
     if (!name) {
       return res.status(400).json({ error: 'Project name query parameter is required' })
     }
-    const projPath = path.join(config.PROJECTS_DIR, name)
+    const projPath = path.resolve(config.PROJECTS_DIR, name)
 
     try {
       await fs.access(projPath)
@@ -205,10 +213,10 @@ export const saveFileContent = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Project name and file path are required in body' })
     }
 
-    const projPath = path.join(config.PROJECTS_DIR, project)
-    const targetPath = path.join(projPath, relPath)
+    const projPath = path.resolve(config.PROJECTS_DIR, project)
+    const targetPath = path.resolve(projPath, relPath)
 
-    if (!targetPath.startsWith(projPath)) {
+    if (!isSafePath(projPath, targetPath)) {
       return res.status(403).json({ error: 'Access denied: invalid path' })
     }
 

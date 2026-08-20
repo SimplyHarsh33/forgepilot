@@ -1,14 +1,33 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import Editor, { Monaco } from '@monaco-editor/react'
 import { useWorkspace } from '../context/WorkspaceContext'
-import { Zap, X, Save } from 'lucide-react'
+import { Zap, X, Save, Terminal as TerminalIcon, Trash2, Copy, ChevronDown, ChevronUp, AlertCircle, Check } from 'lucide-react'
 
 export default function CodeEditor() {
   const { 
-    files, openTabs, activeTab, updateFileContent, openFile, closeFile, theme, projectType, saveFile 
+    files, openTabs, activeTab, updateFileContent, openFile, closeFile, theme, projectType, saveFile,
+    compilerLogs, clearCompilerLogs
   } = useWorkspace()
 
   const editorRef = useRef<any>(null)
+  const terminalEndRef = useRef<HTMLDivElement>(null)
+
+  const [terminalOpen, setTerminalOpen] = useState(false)
+  const [terminalTab, setTerminalTab] = useState<'all' | 'errors'>('all')
+  const [copied, setCopied] = useState(false)
+
+  // Auto-scroll terminal on new log entries
+  useEffect(() => {
+    if (terminalOpen) {
+      terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [compilerLogs, terminalOpen])
+
+  const handleCopyLogs = () => {
+    navigator.clipboard.writeText(compilerLogs.join('\n'))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   // Ctrl+S key listener for saving active document
   useEffect(() => {
@@ -208,6 +227,112 @@ export default function CodeEditor() {
           </div>
         </div>
       )}
+
+      {/* ─── Bottom Interactive Terminal Drawer ─── */}
+      <div className="border-t border-[#E6E2D8] dark:border-[#30363d] bg-[#F5F2EB] dark:bg-[#161b22] flex flex-col shrink-0">
+        
+        {/* Terminal Header Bar */}
+        <div className="h-8 px-3 flex items-center justify-between select-none text-xs border-b border-[#E6E2D8]/50 dark:border-[#30363d]/50">
+          
+          {/* Tabs & Status */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setTerminalOpen(true)
+                setTerminalTab('all')
+              }}
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium transition-all ${
+                terminalOpen && terminalTab === 'all'
+                  ? 'bg-white dark:bg-[#0d1117] text-[#869D7A] font-bold shadow-sm'
+                  : 'text-[#5B625E] dark:text-[#8b949e] hover:text-[#2D312E] dark:hover:text-[#e6edf3]'
+              }`}
+            >
+              <TerminalIcon size={12} />
+              <span>Terminal ({compilerLogs.length})</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setTerminalOpen(true)
+                setTerminalTab('errors')
+              }}
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium transition-all ${
+                terminalOpen && terminalTab === 'errors'
+                  ? 'bg-white dark:bg-[#0d1117] text-red-500 font-bold shadow-sm'
+                  : 'text-[#5B625E] dark:text-[#8b949e] hover:text-[#2D312E] dark:hover:text-[#e6edf3]'
+              }`}
+            >
+              <AlertCircle size={12} className={compilerLogs.some(l => l.includes('[ERR') || l.includes('[Error')) ? 'text-red-500' : ''} />
+              <span>Errors ({compilerLogs.filter(l => l.includes('[ERR') || l.includes('[Error')).length})</span>
+            </button>
+
+            <div className="h-3 w-[1px] bg-[#E6E2D8] dark:bg-[#30363d] mx-1" />
+
+            <div className="flex items-center gap-1 text-[10px] text-[#869D7A] font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#869D7A] animate-pulse" />
+              <span>Sandbox Active</span>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-1">
+            {terminalOpen && (
+              <>
+                <button
+                  onClick={handleCopyLogs}
+                  title="Copy log contents"
+                  className="p-1 rounded hover:bg-white dark:hover:bg-[#0d1117] text-[#5B625E] dark:text-[#8b949e] hover:text-[#2D312E] transition-all"
+                >
+                  {copied ? <Check size={12} className="text-[#869D7A]" /> : <Copy size={12} />}
+                </button>
+                <button
+                  onClick={clearCompilerLogs}
+                  title="Clear output terminal"
+                  className="p-1 rounded hover:bg-white dark:hover:bg-[#0d1117] text-[#5B625E] dark:text-[#8b949e] hover:text-red-500 transition-all"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => setTerminalOpen(!terminalOpen)}
+              title={terminalOpen ? 'Collapse terminal' : 'Expand terminal'}
+              className="p-1 rounded hover:bg-white dark:hover:bg-[#0d1117] text-[#5B625E] dark:text-[#8b949e] hover:text-[#2D312E] transition-all"
+            >
+              {terminalOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+            </button>
+          </div>
+
+        </div>
+
+        {/* Terminal Logs Content Drawer */}
+        {terminalOpen && (
+          <div className="h-44 p-3 bg-[#0d1117] text-xs font-mono overflow-y-auto space-y-1 select-text scrollbar-thin">
+            {compilerLogs.length > 0 ? (
+              compilerLogs
+                .filter(log => terminalTab === 'all' || log.includes('[ERR') || log.includes('[Error'))
+                .map((log, i) => {
+                  let colorClass = 'text-[#e6edf3]'
+                  if (log.includes('[Error') || log.includes('[ERR')) colorClass = 'text-red-400 font-semibold'
+                  else if (log.includes('[ForgePilot]') || log.includes('[Sandbox]')) colorClass = 'text-[#869D7A]'
+                  else if (log.includes('[Compiler]')) colorClass = 'text-[#A89EC9]'
+                  else if (log.includes('[Saved]') || log.includes('[Export]')) colorClass = 'text-amber-300'
+
+                  return (
+                    <div key={i} className={`leading-relaxed break-all ${colorClass}`}>
+                      <span className="text-[#484f58] select-none mr-2">›</span>
+                      {log}
+                    </div>
+                  )
+                })
+            ) : (
+              <div className="text-[#484f58] italic py-2">Terminal ready. Execution logs and errors will stream here live.</div>
+            )}
+            <div ref={terminalEndRef} />
+          </div>
+        )}
+
+      </div>
 
     </div>
   )

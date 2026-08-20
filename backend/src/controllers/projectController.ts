@@ -323,10 +323,12 @@ export const deleteProject = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Project name is required' })
     }
 
-    const projPath = path.join(config.PROJECTS_DIR, name)
+    const baseDir = path.resolve(config.PROJECTS_DIR)
+    const projPath = path.resolve(baseDir, name)
+    const relPath = path.relative(baseDir, projPath)
 
     // Prevent path traversal
-    if (!projPath.startsWith(path.resolve(config.PROJECTS_DIR))) {
+    if (relPath.startsWith('..') || path.isAbsolute(relPath)) {
       return res.status(403).json({ error: 'Access denied: invalid project name' })
     }
 
@@ -353,9 +355,11 @@ export const exportProjectZip = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Project name is required' })
     }
 
-    const projPath = path.join(config.PROJECTS_DIR, name)
+    const baseDir = path.resolve(config.PROJECTS_DIR)
+    const projPath = path.resolve(baseDir, name)
+    const relPath = path.relative(baseDir, projPath)
 
-    if (!projPath.startsWith(path.resolve(config.PROJECTS_DIR))) {
+    if (relPath.startsWith('..') || path.isAbsolute(relPath)) {
       return res.status(403).json({ error: 'Access denied: invalid project name' })
     }
 
