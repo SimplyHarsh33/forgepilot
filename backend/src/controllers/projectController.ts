@@ -3,6 +3,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { config } from '../config/env'
 import { Project } from '../models/projectModel'
+import { createZipArchive } from '../utils/zipUtils'
 
 // Helper to ensure target directory exists
 async function ensureDir(dirPath: string) {
@@ -316,5 +317,35 @@ export const deleteProject = async (req: Request, res: Response) => {
     res.status(200).json({ message: `Project '${name}' deleted successfully` })
   } catch (err: any) {
     res.status(500).json({ error: `Failed to delete project: ${err.message}` })
+  }
+}
+
+export const exportProjectZip = async (req: Request, res: Response) => {
+  try {
+    const { name } = req.params
+    if (!name) {
+      return res.status(400).json({ error: 'Project name is required' })
+    }
+
+    const projPath = path.join(config.PROJECTS_DIR, name)
+
+    if (!projPath.startsWith(path.resolve(config.PROJECTS_DIR))) {
+      return res.status(403).json({ error: 'Access denied: invalid project name' })
+    }
+
+    try {
+      await fs.access(projPath)
+    } catch {
+      return res.status(404).json({ error: `Project '${name}' not found` })
+    }
+
+    const zipBuffer = await createZipArchive(projPath)
+
+    res.setHeader('Content-Type', 'application/zip')
+    res.setHeader('Content-Disposition', `attachment; filename="${name}.zip"`)
+    res.setHeader('Content-Length', zipBuffer.length.toString())
+    res.send(zipBuffer)
+  } catch (err: any) {
+    res.status(500).json({ error: `Failed to export project: ${err.message}` })
   }
 }

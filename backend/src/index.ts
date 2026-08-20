@@ -3,7 +3,7 @@ import cors from 'cors'
 import { config } from './config/env'
 import projectRoutes from './routes/projectRoutes'
 import fileRoutes from './routes/fileRoutes'
-import { listProjects, createProject } from './controllers/projectController'
+import { listProjects, createProject, exportProjectZip } from './controllers/projectController'
 import { readProjectFilesQuery, saveFileContent } from './controllers/fileController'
 import { chatHandler } from './controllers/chatController'
 
@@ -20,6 +20,7 @@ app.use('/api/projects', fileRoutes)
 // Mount Root-level routes (requested custom endpoints)
 app.get('/projects', listProjects)
 app.post('/projects', createProject)
+app.get('/projects/:name/export', exportProjectZip)
 app.get('/files', readProjectFilesQuery)
 app.post('/save', saveFileContent)
 app.post('/chat', chatHandler)
