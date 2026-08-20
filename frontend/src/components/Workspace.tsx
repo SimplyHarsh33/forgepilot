@@ -7,12 +7,12 @@ import LivePreview from './LivePreview'
 import SettingsModal from './SettingsModal'
 import { 
   Zap, Settings, HelpCircle, LogOut, Moon, Sun, 
-  FolderOpen, Columns 
+  FolderOpen, Columns, Download 
 } from 'lucide-react'
 
 export default function Workspace() {
   const { 
-    projectName, projectType, closeProject, theme, setTheme 
+    projectName, projectType, closeProject, exportProject, theme, setTheme 
   } = useWorkspace()
 
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -56,6 +56,16 @@ export default function Workspace() {
         {/* Right side items */}
         <div className="flex items-center gap-2">
           
+          {/* Download ZIP button */}
+          <button
+            onClick={() => exportProject(projectName)}
+            title="Download project as ZIP archive"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#869D7A]/15 hover:bg-[#869D7A]/25 border border-[#869D7A]/30 text-[#788E6E] dark:text-[#869D7A] transition-all text-xs font-semibold shadow-sm"
+          >
+            <Download size={13} />
+            <span className="hidden sm:inline">Export ZIP</span>
+          </button>
+
           {/* Theme switcher */}
           <button
             onClick={toggleTheme}

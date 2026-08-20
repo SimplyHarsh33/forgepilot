@@ -25,8 +25,36 @@ const REACT_FILES = {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "lucide-react": "^0.395.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.4.5"
   }
 }`,
+  'tsconfig.json': `{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
+}`,
+  'src/env.d.ts': `declare module '*.css';\n`,
   'index.html': `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -59,8 +87,7 @@ body {
   background-color: #fdfbf7;
   color: #2d312e;
 }`,
-  'src/App.tsx': `import React from 'react'
-import Navbar from './components/Navbar'
+  'src/App.tsx': `import Navbar from './components/Navbar'
 import Counter from './components/Counter'
 
 function App() {
@@ -81,8 +108,7 @@ function App() {
 }
 
 export default App`,
-  'src/components/Navbar.tsx': `import React from 'react'
-import { Zap } from 'lucide-react'
+  'src/components/Navbar.tsx': `import { Zap } from 'lucide-react'
 
 export default function Navbar() {
   return (
@@ -101,7 +127,7 @@ export default function Navbar() {
     </nav>
   )
 }`,
-  'src/components/Counter.tsx': `import React, { useState } from 'react'
+  'src/components/Counter.tsx': `import { useState } from 'react'
 
 export default function Counter() {
   const [count, setCount] = useState(0)
@@ -344,7 +370,8 @@ export const exportProjectZip = async (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'application/zip')
     res.setHeader('Content-Disposition', `attachment; filename="${name}.zip"`)
     res.setHeader('Content-Length', zipBuffer.length.toString())
-    res.send(zipBuffer)
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition')
+    res.end(zipBuffer)
   } catch (err: any) {
     res.status(500).json({ error: `Failed to export project: ${err.message}` })
   }

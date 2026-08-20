@@ -39,6 +39,7 @@ interface WorkspaceContextProps {
   
   loadProject: (name: string, type: 'react' | 'html') => Promise<void>
   createProject: (name: string, type: 'react' | 'html') => Promise<void>
+  exportProject: (name: string) => Promise<void>
   closeProject: () => void
   createFile: (path: string, content: string, isFolder: boolean) => void
   deleteFile: (path: string) => void
@@ -150,6 +151,36 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (err: any) {
       console.error(err)
       alert(err.message)
+    }
+  }
+
+  const exportProject = async (name: string) => {
+    const targetName = name || projectName
+    if (!targetName) return
+    try {
+      addCompilerLog(`[Export] Packaging "${targetName}" into ZIP archive...`)
+      
+      const downloadUrl = `${BACKEND_URL}/projects/${encodeURIComponent(targetName)}/export`
+      
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.setAttribute('download', `${targetName}.zip`)
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      addCompilerLog(`[Export] Download started for ${targetName}.zip`)
+      confetti({
+        particleCount: 50,
+        spread: 40,
+        origin: { y: 0.8 },
+        colors: ['#869D7A', '#A89EC9'],
+      })
+    } catch (err: any) {
+      console.error(err)
+      alert(`Export failed: ${err.message}`)
+      addCompilerLog(`[Error] Export failed: ${err.message}`)
     }
   }
 
@@ -861,6 +892,7 @@ export default App`
         compilerLogs,
         loadProject,
         createProject,
+        exportProject,
         closeProject,
         createFile,
         deleteFile,

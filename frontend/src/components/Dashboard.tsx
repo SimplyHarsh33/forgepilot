@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { useWorkspace, BACKEND_URL } from '../context/WorkspaceContext'
 import { 
   Terminal, ArrowRight, Zap, Code, 
-  Clock, Plus, Search, ArrowLeft, Folder, Trash2 
+  Clock, Plus, Search, ArrowLeft, Folder, Trash2, Download 
 } from 'lucide-react'
 
 
 
 export default function Dashboard() {
-  const { createProject, loadProject } = useWorkspace()
+  const { createProject, loadProject, exportProject } = useWorkspace()
   const [projects, setProjects] = useState<any[]>([])
   const [view, setView] = useState<'list' | 'create'>('list')
   const [name, setName] = useState('')
@@ -29,6 +29,11 @@ export default function Dashboard() {
 
   const handleLaunchProject = (projectName: string, projectType: 'react' | 'html') => {
     loadProject(projectName, projectType)
+  }
+
+  const handleExportProject = (e: React.MouseEvent, projectName: string) => {
+    e.stopPropagation() // prevent opening project
+    exportProject(projectName)
   }
 
   const handleDeleteProject = async (e: React.MouseEvent, projectName: string) => {
@@ -193,6 +198,14 @@ export default function Dashboard() {
                         }`}>
                           {project.type === 'react' ? 'React App' : 'HTML Sandbox'}
                         </span>
+                        {/* Download ZIP Button */}
+                        <button
+                          onClick={(e) => handleExportProject(e, project.name)}
+                          title="Export project as ZIP"
+                          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[#8A8F8B] hover:text-[#869D7A] hover:bg-[#869D7A]/10 transition-all"
+                        >
+                          <Download size={13} />
+                        </button>
                         {/* Delete Button */}
                         <button
                           onClick={(e) => handleDeleteProject(e, project.name)}
